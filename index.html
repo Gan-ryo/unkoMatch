@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unko Match</title>
+<style>
+  :root {
+    --bg: #1e1f29;
+    --panel: #2a2b38;
+    --text: #e8e8f0;
+    --accent: #6c7ae0;
+    --cell-gap: 4px;
+    --cell-size: 44px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 12px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  }
+  h1 { margin: 0; font-size: 1.4rem; font-weight: 600; }
+  #hud {
+    display: flex;
+    gap: 24px;
+    font-size: 1rem;
+    background: var(--panel);
+    padding: 8px 20px;
+    border-radius: 10px;
+  }
+  .game-area {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+  }
+  .side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  #board-wrap {
+    position: relative;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, var(--cell-size));
+    grid-template-rows: repeat(11, var(--cell-size));
+    gap: var(--cell-gap);
+    background: var(--panel);
+    padding: 10px;
+    border-radius: 12px;
+    touch-action: none;
+  }
+  #stage-banner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  #stage-banner.show { opacity: 1; }
+  #mascot-panel {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 20px;
+    max-width: 260px;
+    text-align: center;
+  }
+  #mascot-panel h2 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: var(--accent);
+  }
+  #mascot {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 6px;
+  }
+  #mascot svg {
+    width: 110px;
+    height: 110px;
+  }
+  #mascot-caption {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .mascot-tier-0 { filter: none; }
+  .mascot-tier-1 { filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)); }
+  .mascot-tier-2 { filter: drop-shadow(0 0 7px gold); }
+  .mascot-tier-3 {
+    filter: drop-shadow(0 0 9px orangered);
+    animation: mascotPulse 1.6s ease-in-out infinite;
+  }
+  .mascot-tier-4 {
+    filter: drop-shadow(0 0 10px #ff6ec7);
+    animation: mascotRainbow 2.4s linear infinite, mascotPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes mascotPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  @keyframes mascotRainbow {
+    0% { filter: hue-rotate(0deg) drop-shadow(0 0 10px #ff6ec7); }
+    100% { filter: hue-rotate(360deg) drop-shadow(0 0 10px #ff6ec7); }
+  }
+  #stage-panel {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 20px;
+    max-width: 260px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  #stage-panel h2 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: var(--accent);
+  }
+  #goal-list {
+    margin: 0;
+    padding-left: 1.2em;
+  }
+  #goal-list li { margin-bottom: 6px; }
+  #goal-list li.done {
+    color: #7cfc9a;
+    text-decoration: line-through;
+    opacity: 0.8;
+  }
+  #howto {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 20px;
+    max-width: 260px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  #howto h2 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: var(--accent);
+  }
+  #howto ul {
+    margin: 0;
+    padding-left: 1.2em;
+  }
+  #howto li { margin-bottom: 8px; }
+  #howto li:last-child { margin-bottom: 0; }
+  .cell {
+    position: relative;
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.9rem;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    transition: box-shadow 0.08s ease, transform 0.08s ease;
+  }
+  .cell .badge {
+    position: absolute;
+    bottom: 0px;
+    right: 2px;
+    font-size: 0.65rem;
+    line-height: 1;
+    font-weight: 900;
+    pointer-events: none;
+    text-shadow: 0 0 2px #000, 0 0 2px #000;
+  }
+  .cell.selected {
+    box-shadow: 0 0 0 3px #ffffff inset;
+    transform: scale(0.92);
+  }
+  .cell.cleared {
+    animation: pop 0.18s ease forwards;
+  }
+  @keyframes pop {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(0.3); opacity: 0; }
+  }
+  /* 縦4つ以上揃って生まれる、横一列を消せる特別なコマ(金色) */
+  .cell.special-row {
+    box-shadow: 0 0 0 3px gold inset, 0 0 6px 2px rgba(255, 215, 0, 0.6);
+    animation: specialGlowRow 1.4s ease-in-out infinite;
+  }
+  @keyframes specialGlowRow {
+    0%, 100% { box-shadow: 0 0 0 3px gold inset, 0 0 6px 2px rgba(255, 215, 0, 0.6); }
+    50% { box-shadow: 0 0 0 3px gold inset, 0 0 14px 5px rgba(255, 215, 0, 0.95); }
+  }
+  /* 横4つ以上揃って生まれる、縦一列を消せる特別なコマ(シアン) */
+  .cell.special-col {
+    box-shadow: 0 0 0 3px #4fd1ff inset, 0 0 6px 2px rgba(79, 209, 255, 0.6);
+    animation: specialGlowCol 1.4s ease-in-out infinite;
+  }
+  @keyframes specialGlowCol {
+    0%, 100% { box-shadow: 0 0 0 3px #4fd1ff inset, 0 0 6px 2px rgba(79, 209, 255, 0.6); }
+    50% { box-shadow: 0 0 0 3px #4fd1ff inset, 0 0 14px 5px rgba(79, 209, 255, 0.95); }
+  }
+  .cell.special-row.cleared,
+  .cell.special-col.cleared {
+    animation: pop 0.18s ease forwards;
+  }
+  /* コマの形はうんこ(💩)固定。色の区別は背景色で表現する(hue-rotateは地色の茶色を基準に回転するため、
+     意図した色と実際の見た目がズレてしまう問題があったので背景色方式に変更) */
+  .color-0 { background: #e05c5c; } /* 赤 */
+  .color-1 { background: #4a90d9; } /* 青 */
+  .color-2 { background: #e8d33c; } /* 黄 */
+  .color-3 { background: #4caf7d; } /* 緑 */
+  button#reset {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button#reset:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+  <h1>Unko Match</h1>
+  <div id="hud">
+    <span>スコア: <strong id="score">0</strong></span>
+    <button id="reset">リセット</button>
+  </div>
+  <div class="game-area">
+    <div id="board-wrap">
+      <div id="board"></div>
+      <div id="stage-banner"></div>
+    </div>
+    <div class="side-column">
+      <div id="mascot-panel">
+        <h2>うんこキャラクター</h2>
+        <div id="mascot">💩</div>
+        <p id="mascot-caption"></p>
+      </div>
+      <div id="stage-panel">
+        <h2 id="stage-title">ステージ1</h2>
+        <ul id="goal-list"></ul>
+      </div>
+      <aside id="howto">
+        <h2>遊び方</h2>
+        <ul>
+          <li>マスをクリックして選択し、上下左右どこかの隣接マスをクリックすると交換されます</li>
+          <li>縦か横に同じコマが3つ以上並ぶと消えます</li>
+          <li>消えた上のコマは下に落ち、空いたマスには新しいコマが補充されます</li>
+          <li>続けて揃うと連鎖してスコアが伸びます</li>
+          <li>縦に4つ以上揃うと ↔ の金色コマに、横に4つ以上揃うと ↕ のシアン色コマに変化します。これらが消えると、それぞれ横一列・縦一列が丸ごと消えます</li>
+          <li>各ステージの目標をすべて満たすとステージクリアになり、次のステージに進みます(ステージ5以降は毎回ランダムな目標になります)</li>
+          <li>ステージが進むと、盤面右のうんこキャラクターも進化します</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+
+<script>
+const ROWS = 11;
+const COLS = 8;
+const COLORS = 4;
+const PIECE_EMOJI = "💩";
+const COLOR_NAMES = ["赤", "青", "黄", "緑"];
+
+// 1回の操作で到達する連鎖深さの上限。
+// 「マッチが発生した操作」を100回行ったとき、5%の確率で到達できる深さ(=9)をMAXとして固定する
+// (シミュレーションで検証: 深さ9以上に到達する確率は約5.3%)
+const CHAIN_DEPTH_MAX = 9;
+
+// ステージ定義。goals は全て満たすとステージクリアになる
+// type: "color"(指定色を target 個消す) / "chainCount"(2段以上の連鎖を target 回発生させる)
+// / "chainDepth"(1回の操作で target 連鎖以上を1回でも達成する) / "special"(特別なコマを target 個作る)
+const STAGES = [
+  {
+    name: "はじめの一歩",
+    goals: [{ type: "color", color: 0, target: 10, label: `${COLOR_NAMES[0]}のコマを10個消す` }],
+  },
+  {
+    name: "連鎖に挑戦",
+    goals: [
+      { type: "color", color: 1, target: 15, label: `${COLOR_NAMES[1]}のコマを15個消す` },
+      { type: "chainCount", target: 2, label: "2段以上の連鎖を2回発生させる" },
+    ],
+  },
+  {
+    name: "特別なコマ",
+    goals: [{ type: "special", target: 3, label: "特別なコマを3個作る" }],
+  },
+  {
+    name: "総力戦",
+    goals: [
+      { type: "color", color: 2, target: 20, label: `${COLOR_NAMES[2]}のコマを20個消す` },
+      { type: "chainCount", target: 3, label: "2段以上の連鎖を3回発生させる" },
+      { type: "special", target: 2, label: "特別なコマを2個作る" },
+    ],
+  },
+  {
+    name: "最終決戦",
+    goals: [
+      { type: "color", color: 3, target: 25, label: `${COLOR_NAMES[3]}のコマを25個消す` },
+      { type: "special", target: 4, label: "特別なコマを4個作る" },
+      { type: "chainDepth", target: CHAIN_DEPTH_MAX, label: `1回の操作で${CHAIN_DEPTH_MAX}連鎖以上を達成する` },
+    ],
+  },
+];
+
+// ステージ5(STAGES.length番目)以降は毎回ランダムな条件を生成する。
+// 一度生成したステージは dynamicStages にキャッシュし、進捗を保持できるようにする
+const dynamicStages = [];
+
+function randomInt(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function generateRandomStage(stageNumber) {
+  const difficulty = Math.min(stageNumber - STAGES.length, 3); // 難易度の伸びは緩やかに抑える
+  const allTypes = ["color", "chainCount", "chainDepth", "special"];
+  const shuffled = [...allTypes].sort(() => Math.random() - 0.5);
+  const goalCount = randomInt(1, 3);
+  const goals = shuffled.slice(0, goalCount).map((type) => {
+    if (type === "color") {
+      const color = randomInt(0, COLORS - 1);
+      const target = randomInt(10, 18) + difficulty * 2;
+      return { type, color, target, label: `${COLOR_NAMES[color]}のコマを${target}個消す` };
+    }
+    if (type === "chainCount") {
+      const target = randomInt(2, 3) + difficulty;
+      return { type, target, label: `2段以上の連鎖を${target}回発生させる` };
+    }
+    if (type === "chainDepth") {
+      // 連鎖深さは難易度に関わらずMAX値(CHAIN_DEPTH_MAX)で固定する
+      return { type, target: CHAIN_DEPTH_MAX, label: `1回の操作で${CHAIN_DEPTH_MAX}連鎖以上を達成する` };
+    }
+    const target = randomInt(2, 4) + difficulty;
+    return { type: "special", target, label: `特別なコマを${target}個作る` };
+  });
+  return { name: "ランダム条件", goals };
+}
+
+function getStage(index) {
+  if (index < STAGES.length) return STAGES[index];
+  const dynamicIndex = index - STAGES.length;
+  while (dynamicStages.length <= dynamicIndex) {
+    dynamicStages.push(generateRandomStage(STAGES.length + dynamicStages.length + 1));
+  }
+  return dynamicStages[dynamicIndex];
+}
+
+let board = [];
+let special = []; // special[r][c] = null | 'row'(横一列を消せる) | 'col'(縦一列を消せる)
+let score = 0;
+let selected = null;
+let busy = false;
+let stageIndex = 0;
+
+// ステージが5進むごとに見た目が進化する、1枚のSVG画像で描いたうんこキャラクター
+// tierが上がるごとに装飾(サングラス→王冠→炎→虹)を重ねて描き足していく
+const MASCOT_CAPTIONS = [
+  "ただのうんこ",
+  "ちょっとイケてるうんこ",
+  "王冠を手に入れたうんこ",
+  "炎をまとったうんこ",
+  "伝説のうんこ",
+];
+const STAGES_PER_MASCOT_TIER = 5;
+
+function sparklePath(x, y, size) {
+  const s = size;
+  return `M${x} ${y - s} L${x + s * 0.3} ${y - s * 0.3} L${x + s} ${y} L${x + s * 0.3} ${y + s * 0.3} L${x} ${y + s} L${x - s * 0.3} ${y + s * 0.3} L${x - s} ${y} L${x - s * 0.3} ${y - s * 0.3} Z`;
+}
+
+function buildMascotSVG(tier) {
+  const parts = [];
+
+  // tier4: 一番奥に虹のアーチ
+  if (tier >= 4) {
+    const rainbowColors = ["#ff5252", "#ffb74d", "#fff176", "#81c784", "#64b5f6", "#ba68c8"];
+    rainbowColors.forEach((color, i) => {
+      const radius = 52 - i * 6;
+      parts.push(
+        `<path d="M${60 - radius} 96 A ${radius} ${radius} 0 0 1 ${60 + radius} 96" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round"/>`
+      );
+    });
+  }
+
+  // tier3: 左右に炎のオーラ
+  if (tier >= 3) {
+    const flame = (x, y, scale, color, innerColor) => `
+      <g transform="translate(${x} ${y}) scale(${scale})">
+        <path d="M0 20 C-10 5 -6 -15 0 -22 C6 -15 10 5 0 20 Z" fill="${color}"/>
+        <path d="M0 12 C-5 2 -3 -8 0 -12 C3 -8 5 2 0 12 Z" fill="${innerColor}"/>
+      </g>`;
+    parts.push(flame(18, 68, 1.1, "#ff7b25", "#ffd54f"));
+    parts.push(flame(102, 68, 1.1, "#ff7b25", "#ffd54f"));
+  }
+
+  // 本体(うんこの渦巻き)
+  parts.push(`
+    <g stroke="#5b3a1f" stroke-width="2.5">
+      <circle cx="60" cy="95" r="26" fill="#8b5e34"/>
+      <circle cx="59" cy="69" r="21" fill="#946b40"/>
+      <circle cx="64" cy="48" r="15" fill="#9c7349"/>
+      <circle cx="68" cy="31" r="9" fill="#a37c52"/>
+      <circle cx="71" cy="20" r="5" fill="#a98157"/>
+    </g>
+  `);
+
+  // 目と口(tier1でサングラスに隠れる)
+  if (tier >= 1) {
+    parts.push(`
+      <g>
+        <ellipse cx="50" cy="70" rx="9" ry="7" fill="#1a1a1a"/>
+        <ellipse cx="67" cy="68" rx="9" ry="7" fill="#1a1a1a"/>
+        <rect x="58" y="65" width="8" height="3" fill="#1a1a1a"/>
+        <circle cx="47" cy="67" r="2" fill="#ffffff" opacity="0.6"/>
+        <circle cx="64" cy="65" r="2" fill="#ffffff" opacity="0.6"/>
+      </g>
+    `);
+  } else {
+    parts.push(`
+      <g>
+        <circle cx="50" cy="70" r="6" fill="#fff"/>
+        <circle cx="67" cy="68" r="6" fill="#fff"/>
+        <circle cx="51" cy="71" r="3" fill="#2b2b2b"/>
+        <circle cx="68" cy="69" r="3" fill="#2b2b2b"/>
+      </g>
+    `);
+  }
+  parts.push(`<path d="M50 82 Q59 90 69 81" stroke="#3a2415" stroke-width="3" fill="none" stroke-linecap="round"/>`);
+
+  // tier2以上: 王冠とキラキラ
+  if (tier >= 2) {
+    const cx = 70;
+    const baseY = 18; // 中央の頂点がviewBoxの外に出ないよう余裕を持たせる
+    parts.push(`
+      <g stroke="#b8860b" stroke-width="1.5">
+        <rect x="${cx - 18}" y="${baseY}" width="36" height="9" rx="2" fill="#ffd700"/>
+        <polygon points="${cx - 18},${baseY} ${cx - 10},${baseY - 11} ${cx - 2},${baseY}" fill="#ffd700"/>
+        <polygon points="${cx - 7},${baseY} ${cx},${baseY - 15} ${cx + 7},${baseY}" fill="#ffd700"/>
+        <polygon points="${cx + 2},${baseY} ${cx + 10},${baseY - 11} ${cx + 18},${baseY}" fill="#ffd700"/>
+      </g>
+      <circle cx="${cx - 10}" cy="${baseY - 11}" r="2" fill="#ff4d4d"/>
+      <circle cx="${cx}" cy="${baseY - 15}" r="2.2" fill="#4da6ff"/>
+      <circle cx="${cx + 10}" cy="${baseY - 11}" r="2" fill="#4dff88"/>
+    `);
+    parts.push(`<path d="${sparklePath(20, 30, 7)}" fill="#fff59d"/>`);
+    parts.push(`<path d="${sparklePath(100, 42, 6)}" fill="#fff59d"/>`);
+  }
+
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${parts.join("")}</svg>`;
+}
+
+const boardEl = document.getElementById("board");
+const scoreEl = document.getElementById("score");
+const stageTitleEl = document.getElementById("stage-title");
+const goalListEl = document.getElementById("goal-list");
+const stageBannerEl = document.getElementById("stage-banner");
+const mascotEl = document.getElementById("mascot");
+const mascotCaptionEl = document.getElementById("mascot-caption");
+
+const cellSizePx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+const gapPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+const UNIT = cellSizePx + gapPx;
+const FALL_MS = 260;
+const CLEAR_MS = 180;
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function randomColor() {
+  return Math.floor(Math.random() * COLORS);
+}
+
+function createEmptyBoard() {
+  return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+}
+
+function fillRandomBoard() {
+  board = Array.from({ length: ROWS }, () =>
+    Array.from({ length: COLS }, () => randomColor())
+  );
+  special = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+}
+
+function currentStage() {
+  return getStage(stageIndex);
+}
+
+function resetGoalProgress() {
+  for (const g of currentStage().goals) g.current = 0;
+}
+
+function addGoalProgress(matchFn, amount) {
+  if (amount <= 0) return;
+  for (const g of currentStage().goals) {
+    if (matchFn(g)) g.current = Math.min(g.target, (g.current || 0) + amount);
+  }
+}
+
+function recordColorCleared(color, amount) {
+  addGoalProgress((g) => g.type === "color" && g.color === color, amount);
+}
+
+// 2段以上の連鎖が発生した「回数」を加算する目標
+function recordChainCount() {
+  addGoalProgress((g) => g.type === "chainCount", 1);
+}
+
+// 1回の操作で何連鎖(iterations)を達成したか。目標までの最大値を記録する(1回でも達成すればクリア)
+function recordChainDepth(depth) {
+  for (const g of currentStage().goals) {
+    if (g.type === "chainDepth") {
+      g.current = Math.max(g.current || 0, Math.min(depth, g.target));
+    }
+  }
+}
+
+function recordSpecialCreated(amount) {
+  addGoalProgress((g) => g.type === "special", amount);
+}
+
+function isStageCleared() {
+  return currentStage().goals.every((g) => (g.current || 0) >= g.target);
+}
+
+// 縦横それぞれの「3つ以上並んだ連」をリストで返す
+function collectRuns(b) {
+  const runs = [];
+
+  for (let r = 0; r < ROWS; r++) {
+    let c = 0;
+    while (c < COLS) {
+      const color = b[r][c];
+      if (color === null) { c++; continue; }
+      let end = c + 1;
+      while (end < COLS && b[r][end] === color) end++;
+      if (end - c >= 3) {
+        const cells = [];
+        for (let k = c; k < end; k++) cells.push({ r, c: k });
+        runs.push({ dir: "h", color, cells });
+      }
+      c = end;
+    }
+  }
+
+  for (let c = 0; c < COLS; c++) {
+    let r = 0;
+    while (r < ROWS) {
+      const color = b[r][c];
+      if (color === null) { r++; continue; }
+      let end = r + 1;
+      while (end < ROWS && b[end][c] === color) end++;
+      if (end - r >= 3) {
+        const cells = [];
+        for (let k = r; k < end; k++) cells.push({ r: k, c });
+        runs.push({ dir: "v", color, cells });
+      }
+      r = end;
+    }
+  }
+
+  return runs;
+}
+
+function cellKey(r, c) {
+  return `${r},${c}`;
+}
+
+// 特別なコマなら種類に応じたクラスと方向バッジ(↔/↕)をセルに付与する
+function applySpecialStyle(cell, r, c) {
+  const type = special[r][c];
+  if (type === "row") {
+    cell.classList.add("special-row");
+  } else if (type === "col") {
+    cell.classList.add("special-col");
+  } else {
+    return;
+  }
+  const badge = document.createElement("span");
+  badge.className = "badge";
+  badge.textContent = type === "row" ? "↔" : "↕";
+  cell.appendChild(badge);
+}
+
+// 既存コマの移動距離・新規コマの出現元を求め、呼び出し側でアニメーションに使う fallMap を返す
+// special(特別なコマの状態)も色と一緒に落下させる
+function applyGravityAndRefill(b, sp) {
+  const fallMap = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  for (let c = 0; c < COLS; c++) {
+    const colEntries = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (b[r][c] !== null) colEntries.push({ value: b[r][c], special: sp[r][c], oldRow: r });
+    }
+    const missing = ROWS - colEntries.length;
+    const newCol = [];
+    for (let i = 0; i < missing; i++) newCol.push({ value: randomColor(), special: null, oldRow: null });
+    for (const e of colEntries) newCol.push(e);
+    for (let r = 0; r < ROWS; r++) {
+      b[r][c] = newCol[r].value;
+      sp[r][c] = newCol[r].special;
+      fallMap[r][c] = newCol[r].oldRow === null ? missing : r - newCol[r].oldRow;
+    }
+  }
+  return fallMap;
+}
+
+// swapHint: ユーザーの直接操作で発生した最初のマッチの場合、交換した2マスの位置
+// {a:{r,c}, b:{r,c}} を渡す。縦4つ以上の連でどのマスを特別なコマにするか選ぶ際のヒントに使う
+async function resolveBoard(swapHint) {
+  let any = false;
+  let firstIteration = true;
+  let iterations = 0;
+
+  while (true) {
+    const runs = collectRuns(board);
+    if (runs.length === 0) break;
+    any = true;
+    iterations++;
+
+    // 4つ以上の連 → 1マスを特別なコマに変換し、そのマスは消滅対象から除外する
+    // 縦の連なら「横一列を消せる」('row')、横の連なら「縦一列を消せる」('col')になる
+    const upgrades = [];
+    const upgradeKeys = new Set();
+    for (const run of runs) {
+      if (run.cells.length >= 4) {
+        // すでに特別なコマが乗っているマスは変換先として選ばない(発動せず上書きされてしまうため)
+        const freeCells = run.cells.filter((cell) => special[cell.r][cell.c] === null);
+        const candidates = freeCells.length > 0 ? freeCells : run.cells;
+        let pick = null;
+        if (firstIteration && swapHint) {
+          pick = candidates.find(
+            (cell) =>
+              (cell.r === swapHint.a.r && cell.c === swapHint.a.c) ||
+              (cell.r === swapHint.b.r && cell.c === swapHint.b.c)
+          );
+        }
+        if (!pick) {
+          pick = candidates[Math.floor((candidates.length - 1) / 2)];
+        }
+        const key = cellKey(pick.r, pick.c);
+        if (!upgradeKeys.has(key)) {
+          upgradeKeys.add(key);
+          upgrades.push({ r: pick.r, c: pick.c, type: run.dir === "v" ? "row" : "col" });
+        }
+      }
+    }
+
+    // 通常の消滅対象(マッチしたマス全体から、特別なコマへ変換するマスを除く)
+    const clearSet = new Set();
+    for (const run of runs) {
+      for (const cell of run.cells) clearSet.add(cellKey(cell.r, cell.c));
+    }
+    for (const key of upgradeKeys) clearSet.delete(key);
+
+    // すでに盤面にある特別なコマが消滅対象に含まれていたら、その一列をまとめて消滅対象に広げる(連鎖も対応)
+    const triggered = new Set();
+    const queue = Array.from(clearSet);
+    while (queue.length > 0) {
+      const key = queue.shift();
+      if (triggered.has(key)) continue;
+      const [r, c] = key.split(",").map(Number);
+      const type = special[r][c];
+      if (type === "row") {
+        triggered.add(key);
+        for (let cc = 0; cc < COLS; cc++) {
+          const lineKey = cellKey(r, cc);
+          if (!clearSet.has(lineKey)) {
+            clearSet.add(lineKey);
+            queue.push(lineKey);
+          }
+        }
+      } else if (type === "col") {
+        triggered.add(key);
+        for (let rr = 0; rr < ROWS; rr++) {
+          const lineKey = cellKey(rr, c);
+          if (!clearSet.has(lineKey)) {
+            clearSet.add(lineKey);
+            queue.push(lineKey);
+          }
+        }
+      }
+    }
+
+    const clearGrid = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    for (const key of clearSet) {
+      const [r, c] = key.split(",").map(Number);
+      clearGrid[r][c] = true;
+    }
+
+    renderClearing(clearGrid);
+    await delay(CLEAR_MS);
+
+    const colorTally = Array(COLORS).fill(0);
+    for (const key of clearSet) {
+      const [r, c] = key.split(",").map(Number);
+      score++;
+      colorTally[board[r][c]]++;
+      board[r][c] = null;
+      special[r][c] = null;
+    }
+    for (let i = 0; i < COLORS; i++) {
+      if (colorTally[i] > 0) recordColorCleared(i, colorTally[i]);
+    }
+
+    for (const cell of upgrades) {
+      special[cell.r][cell.c] = cell.type;
+    }
+    if (upgrades.length > 0) recordSpecialCreated(upgrades.length);
+
+    const fallMap = applyGravityAndRefill(board, special);
+    renderWithFall(fallMap);
+    await delay(FALL_MS);
+
+    firstIteration = false;
+  }
+
+  if (iterations >= 2) recordChainCount();
+  recordChainDepth(iterations);
+  renderStageUI();
+  return any;
+}
+
+// 新しいステージ用に盤面を用意する。resetScore=true なら totalスコアも0に戻す(ゲーム最初から)
+async function startStage({ resetScore = false } = {}) {
+  busy = true;
+  fillRandomBoard();
+  render();
+  await resolveBoard(); // 偶発的な初期マッチを解消(ここでの進捗加算は直後に打ち消す)
+  if (resetScore) score = 0;
+  resetGoalProgress();
+  selected = null;
+  render();
+  renderStageUI();
+  busy = false;
+}
+
+function resetGame() {
+  stageIndex = 0;
+  dynamicStages.length = 0;
+  stageBannerEl.classList.remove("show");
+  startStage({ resetScore: true });
+}
+
+// ステージクリア時の表示と次のステージへの進行(ステージ5以降も無限に続く)
+async function handleStageClear() {
+  stageBannerEl.textContent = `${currentStage().name} クリア!`;
+  stageBannerEl.classList.add("show");
+  await delay(1300);
+  stageBannerEl.classList.remove("show");
+
+  stageIndex++;
+  await startStage({ resetScore: false });
+}
+
+function isAdjacent(a, b) {
+  return Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
+}
+
+async function onCellClick(r, c) {
+  if (busy) return;
+  const pos = { r, c };
+  if (!selected) {
+    selected = pos;
+    render();
+    return;
+  }
+  if (selected.r === r && selected.c === c) {
+    selected = null;
+    render();
+    return;
+  }
+  if (isAdjacent(selected, pos)) {
+    busy = true;
+    const a = { r: selected.r, c: selected.c };
+    const b = { r, c };
+    const tmpColor = board[a.r][a.c];
+    const tmpSpecial = special[a.r][a.c];
+    board[a.r][a.c] = board[b.r][b.c];
+    special[a.r][a.c] = special[b.r][b.c];
+    board[b.r][b.c] = tmpColor;
+    special[b.r][b.c] = tmpSpecial;
+    selected = null;
+    render();
+    await resolveBoard({ a, b });
+    render();
+    if (isStageCleared()) {
+      await handleStageClear();
+    }
+    busy = false;
+  } else {
+    selected = pos;
+    render();
+  }
+}
+
+function render() {
+  boardEl.innerHTML = "";
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement("div");
+      const color = board[r][c];
+      cell.className = `cell color-${color}`;
+      cell.textContent = PIECE_EMOJI;
+      applySpecialStyle(cell, r, c);
+      if (selected && selected.r === r && selected.c === c) {
+        cell.classList.add("selected");
+      }
+      cell.addEventListener("click", () => onCellClick(r, c));
+      boardEl.appendChild(cell);
+    }
+  }
+  scoreEl.textContent = score;
+}
+
+// マッチしたマスに消滅アニメーションを付けて描画(盤面データはまだ変更しない)
+function renderClearing(clearGrid) {
+  boardEl.innerHTML = "";
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement("div");
+      const color = board[r][c];
+      cell.className = `cell color-${color}`;
+      cell.textContent = PIECE_EMOJI;
+      applySpecialStyle(cell, r, c);
+      if (clearGrid[r][c]) cell.classList.add("cleared");
+      boardEl.appendChild(cell);
+    }
+  }
+  scoreEl.textContent = score;
+}
+
+// fallMap[r][c] 分だけ上から落ちてくるようにアニメーションさせて描画
+function renderWithFall(fallMap) {
+  boardEl.innerHTML = "";
+  const falling = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement("div");
+      const color = board[r][c];
+      cell.className = `cell color-${color}`;
+      cell.textContent = PIECE_EMOJI;
+      applySpecialStyle(cell, r, c);
+      const dist = fallMap[r][c];
+      if (dist > 0) {
+        cell.style.transition = "none";
+        cell.style.transform = `translateY(${-dist * UNIT}px)`;
+        falling.push(cell);
+      }
+      boardEl.appendChild(cell);
+    }
+  }
+  scoreEl.textContent = score;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      for (const cell of falling) {
+        cell.style.transition = `transform ${FALL_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+        cell.style.transform = "translateY(0)";
+      }
+    });
+  });
+}
+
+function renderMascot() {
+  const tier = Math.min(
+    Math.floor(stageIndex / STAGES_PER_MASCOT_TIER),
+    MASCOT_CAPTIONS.length - 1
+  );
+  mascotEl.innerHTML = buildMascotSVG(tier);
+  mascotEl.className = `mascot-tier-${tier}`;
+  mascotCaptionEl.textContent = MASCOT_CAPTIONS[tier];
+}
+
+function renderStageUI() {
+  const stage = currentStage();
+  stageTitleEl.textContent = `ステージ${stageIndex + 1}: ${stage.name}`;
+  goalListEl.innerHTML = "";
+  for (const g of stage.goals) {
+    const li = document.createElement("li");
+    const cur = Math.min(g.current || 0, g.target);
+    li.textContent = `${g.label} (${cur}/${g.target})`;
+    if (cur >= g.target) li.classList.add("done");
+    goalListEl.appendChild(li);
+  }
+  renderMascot();
+}
+
+document.getElementById("reset").addEventListener("click", resetGame);
+
+resetGame();
+</script>
+</body>
+</html>
