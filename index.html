@@ -50,6 +50,55 @@
   #board-wrap {
     position: relative;
   }
+  .gimmick {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .gimmick-row {
+    left: 10px;
+    width: calc(100% - 20px);
+    height: var(--cell-size);
+    border-radius: 8px;
+    background: linear-gradient(90deg, transparent, #fff6cc, gold, #fff6cc, transparent);
+    box-shadow: 0 0 24px 6px rgba(255, 215, 0, 0.8);
+    animation: gimmickRowFlash 1.1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+  .gimmick-col {
+    top: 10px;
+    height: calc(100% - 20px);
+    width: var(--cell-size);
+    border-radius: 8px;
+    background: linear-gradient(180deg, transparent, #d6f3ff, #4fd1ff, #d6f3ff, transparent);
+    box-shadow: 0 0 24px 6px rgba(79, 209, 255, 0.8);
+    animation: gimmickColFlash 1.1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+  .gimmick-bomb {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    margin-left: calc(var(--cell-size) / -2);
+    margin-top: calc(var(--cell-size) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff6e0, #ff9a4d 35%, rgba(255, 90, 54, 0.85) 60%, rgba(255, 90, 54, 0));
+    animation: gimmickBombBurst 1.2s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+  }
+  @keyframes gimmickRowFlash {
+    0% { opacity: 0; transform: scaleY(0.25); }
+    18% { opacity: 1; transform: scaleY(1.8); }
+    45% { opacity: 1; transform: scaleY(1.15); }
+    100% { opacity: 0; transform: scaleY(1); }
+  }
+  @keyframes gimmickColFlash {
+    0% { opacity: 0; transform: scaleX(0.25); }
+    18% { opacity: 1; transform: scaleX(1.8); }
+    45% { opacity: 1; transform: scaleX(1.15); }
+    100% { opacity: 0; transform: scaleX(1); }
+  }
+  @keyframes gimmickBombBurst {
+    0% { transform: scale(0.2); opacity: 1; }
+    25% { transform: scale(2.2); opacity: 1; }
+    100% { transform: scale(4.8); opacity: 0; }
+  }
   #board {
     display: grid;
     grid-template-columns: repeat(8, var(--cell-size));
@@ -90,14 +139,51 @@
     font-size: 1rem;
     color: var(--accent);
   }
-  #mascot {
+  #mascot-stage {
+    position: relative;
     display: flex;
     justify-content: center;
     margin-bottom: 6px;
   }
+  #mascot {
+    display: flex;
+    justify-content: center;
+  }
   #mascot svg {
     width: 110px;
     height: 110px;
+  }
+  #mascot.evolving svg {
+    animation: mascotEvolveBurst 1.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  #mascot-evolve-badge {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translate(-50%, -10px);
+    white-space: nowrap;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff3b0;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.9), 0 0 12px rgba(255, 215, 0, 0.6);
+    opacity: 0;
+    pointer-events: none;
+  }
+  #mascot-evolve-badge.show {
+    animation: mascotEvolveBadgePop 1.6s ease-out forwards;
+  }
+  @keyframes mascotEvolveBurst {
+    0% { transform: scale(1); filter: brightness(1); }
+    15% { transform: scale(0.85) rotate(-4deg); filter: brightness(1.1); }
+    40% { transform: scale(1.35) rotate(3deg); filter: brightness(1.9) drop-shadow(0 0 20px gold); }
+    65% { transform: scale(1.1) rotate(-2deg); filter: brightness(1.4); }
+    100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+  }
+  @keyframes mascotEvolveBadgePop {
+    0% { opacity: 0; transform: translate(-50%, 6px) scale(0.6); }
+    25% { opacity: 1; transform: translate(-50%, -14px) scale(1.15); }
+    70% { opacity: 1; transform: translate(-50%, -18px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -28px) scale(0.95); }
   }
   #mascot-caption {
     margin: 0;
@@ -135,6 +221,12 @@
     margin: 0 0 10px;
     font-size: 1rem;
     color: var(--accent);
+  }
+  #moves-row {
+    margin: 0 0 10px;
+  }
+  #moves-remaining.low {
+    color: #ff6b6b;
   }
   #goal-list {
     margin: 0;
@@ -218,16 +310,26 @@
     0%, 100% { box-shadow: 0 0 0 3px #4fd1ff inset, 0 0 6px 2px rgba(79, 209, 255, 0.6); }
     50% { box-shadow: 0 0 0 3px #4fd1ff inset, 0 0 14px 5px rgba(79, 209, 255, 0.95); }
   }
+  /* 縦横同時に3つ以上揃って生まれる、周囲3x3マスを消せる爆弾の特別なコマ(赤オレンジ) */
+  .cell.special-bomb {
+    box-shadow: 0 0 0 3px #ff5a36 inset, 0 0 8px 3px rgba(255, 90, 54, 0.7);
+    animation: specialGlowBomb 1s ease-in-out infinite;
+  }
+  @keyframes specialGlowBomb {
+    0%, 100% { box-shadow: 0 0 0 3px #ff5a36 inset, 0 0 8px 3px rgba(255, 90, 54, 0.7); }
+    50% { box-shadow: 0 0 0 3px #ff5a36 inset, 0 0 18px 6px rgba(255, 90, 54, 1); }
+  }
   .cell.special-row.cleared,
-  .cell.special-col.cleared {
+  .cell.special-col.cleared,
+  .cell.special-bomb.cleared {
     animation: pop 0.18s ease forwards;
   }
   /* コマの形はうんこ(💩)固定。色の区別は背景色で表現する(hue-rotateは地色の茶色を基準に回転するため、
      意図した色と実際の見た目がズレてしまう問題があったので背景色方式に変更) */
-  .color-0 { background: #e05c5c; } /* 赤 */
-  .color-1 { background: #4a90d9; } /* 青 */
-  .color-2 { background: #e8d33c; } /* 黄 */
-  .color-3 { background: #4caf7d; } /* 緑 */
+  .color-0 { background: #ec9595; } /* 赤(淡め) */
+  .color-1 { background: #89b7e6; } /* 青(淡め) */
+  .color-2 { background: #f0e280; } /* 黄(淡め) */
+  .color-3 { background: #8bcbab; } /* 緑(淡め) */
   button#reset {
     background: var(--accent);
     color: #fff;
@@ -254,23 +356,32 @@
     <div class="side-column">
       <div id="mascot-panel">
         <h2>うんこキャラクター</h2>
-        <div id="mascot">💩</div>
+        <div id="mascot-stage">
+          <div id="mascot">💩</div>
+          <div id="mascot-evolve-badge">⬆️ 進化!</div>
+        </div>
         <p id="mascot-caption"></p>
       </div>
       <div id="stage-panel">
         <h2 id="stage-title">ステージ1</h2>
+        <p id="moves-row">残り操作回数: <strong id="moves-remaining">0</strong></p>
         <ul id="goal-list"></ul>
       </div>
       <aside id="howto">
         <h2>遊び方</h2>
         <ul>
-          <li>マスをクリックして選択し、上下左右どこかの隣接マスをクリックすると交換されます</li>
+          <li>マスをクリック(タップ)して選択し、上下左右どこかの隣接マスをクリックすると交換されます</li>
+          <li>マスを上下左右にドラッグ(スワイプ)しても、その方向のマスと交換できます</li>
           <li>縦か横に同じコマが3つ以上並ぶと消えます</li>
           <li>消えた上のコマは下に落ち、空いたマスには新しいコマが補充されます</li>
           <li>続けて揃うと連鎖してスコアが伸びます</li>
           <li>縦に4つ以上揃うと ↔ の金色コマに、横に4つ以上揃うと ↕ のシアン色コマに変化します。これらが消えると、それぞれ横一列・縦一列が丸ごと消えます</li>
-          <li>各ステージの目標をすべて満たすとステージクリアになり、次のステージに進みます(ステージ5以降は毎回ランダムな目標になります)</li>
-          <li>ステージが進むと、盤面右のうんこキャラクターも進化します</li>
+          <li>縦と横が同時に3つ以上揃うと、💥 の爆弾コマに変化します。消えると周囲3x3マスがまとめて消えます</li>
+          <li>特別なコマが発動すると、光の演出(行/列のフラッシュ、爆弾の爆発エフェクト)が表示されます</li>
+          <li>各ステージの目標をすべて満たすとステージクリアになり、次のステージに進みます(ステージ101以降は毎回ランダムな目標になります)</li>
+          <li>ステージクリア・キャラクターの進化・新しいステージの開始時には、盤面中央にバナーでお知らせします</li>
+          <li>各ステージには操作回数の上限があります。使い切ると同じステージを新しい盤面でやり直します</li>
+          <li>ステージが進むと、盤面右のうんこキャラクターも進化します。進化の瞬間には光るバースト演出と「⬆️進化!」の表示が出ます</li>
         </ul>
       </aside>
     </div>
@@ -283,49 +394,28 @@ const COLORS = 4;
 const PIECE_EMOJI = "💩";
 const COLOR_NAMES = ["赤", "青", "黄", "緑"];
 
-// 1回の操作で到達する連鎖深さの上限。
-// 「マッチが発生した操作」を100回行ったとき、5%の確率で到達できる深さ(=9)をMAXとして固定する
-// (シミュレーションで検証: 深さ9以上に到達する確率は約5.3%)
+// 1回の操作で到達する連鎖深さの目標値。
+// 「マッチが発生した操作」を100回行ったとき、5%の確率で到達できる深さ(=9)をMAXとする
+// (シミュレーションで検証: 深さ9以上に到達する確率は約5.3%)。
+// 最初のステージ(ステージ5)では易しめのCHAIN_DEPTH_MINから始め、ステージが進むごとに
+// 徐々に上げていき、CHAIN_DEPTH_MAXで打ち止めにする
+const CHAIN_DEPTH_MIN = 5;
 const CHAIN_DEPTH_MAX = 9;
+const CURATED_STAGE_COUNT = 5; // STAGES配列の要素数と一致させる(STAGES定義前に必要なため定数化)
+const CHAIN_DEPTH_STAGES_PER_STEP = 3; // この数のステージが進むごとに目標を1上げる
 
-// ステージ定義。goals は全て満たすとステージクリアになる
+function chainDepthTargetForStage(stageNumber) {
+  const steps = Math.max(0, Math.floor((stageNumber - CURATED_STAGE_COUNT) / CHAIN_DEPTH_STAGES_PER_STEP));
+  return Math.min(CHAIN_DEPTH_MAX, CHAIN_DEPTH_MIN + steps);
+}
+
+// ステージ1〜100は事前にbotシミュレーション(README/要件定義にも記載)で、
+// そのステージの目標を70%の確率で達成できる操作回数を算出し、goalsとmoveLimitを固定(ベイク)している。
 // type: "color"(指定色を target 個消す) / "chainCount"(2段以上の連鎖を target 回発生させる)
 // / "chainDepth"(1回の操作で target 連鎖以上を1回でも達成する) / "special"(特別なコマを target 個作る)
-const STAGES = [
-  {
-    name: "はじめの一歩",
-    goals: [{ type: "color", color: 0, target: 10, label: `${COLOR_NAMES[0]}のコマを10個消す` }],
-  },
-  {
-    name: "連鎖に挑戦",
-    goals: [
-      { type: "color", color: 1, target: 15, label: `${COLOR_NAMES[1]}のコマを15個消す` },
-      { type: "chainCount", target: 2, label: "2段以上の連鎖を2回発生させる" },
-    ],
-  },
-  {
-    name: "特別なコマ",
-    goals: [{ type: "special", target: 3, label: "特別なコマを3個作る" }],
-  },
-  {
-    name: "総力戦",
-    goals: [
-      { type: "color", color: 2, target: 20, label: `${COLOR_NAMES[2]}のコマを20個消す` },
-      { type: "chainCount", target: 3, label: "2段以上の連鎖を3回発生させる" },
-      { type: "special", target: 2, label: "特別なコマを2個作る" },
-    ],
-  },
-  {
-    name: "最終決戦",
-    goals: [
-      { type: "color", color: 3, target: 25, label: `${COLOR_NAMES[3]}のコマを25個消す` },
-      { type: "special", target: 4, label: "特別なコマを4個作る" },
-      { type: "chainDepth", target: CHAIN_DEPTH_MAX, label: `1回の操作で${CHAIN_DEPTH_MAX}連鎖以上を達成する` },
-    ],
-  },
-];
+const BAKED_STAGES = [{"name":"はじめの一歩","moveLimit":4,"goals":[{"type":"color","target":10,"label":"赤のコマを10個消す","color":0}]},{"name":"連鎖に挑戦","moveLimit":5,"goals":[{"type":"color","target":15,"label":"青のコマを15個消す","color":1},{"type":"chainCount","target":2,"label":"2段以上の連鎖を2回発生させる"}]},{"name":"特別なコマ","moveLimit":4,"goals":[{"type":"special","target":3,"label":"特別なコマを3個作る"}]},{"name":"総力戦","moveLimit":6,"goals":[{"type":"color","target":20,"label":"黄のコマを20個消す","color":2},{"type":"chainCount","target":3,"label":"2段以上の連鎖を3回発生させる"},{"type":"special","target":2,"label":"特別なコマを2個作る"}]},{"name":"最終決戦","moveLimit":8,"goals":[{"type":"color","target":25,"label":"緑のコマを25個消す","color":3},{"type":"special","target":4,"label":"特別なコマを4個作る"},{"type":"chainDepth","target":5,"label":"1回の操作で5連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"chainDepth","target":5,"label":"1回の操作で5連鎖以上を達成する"},{"type":"chainCount","target":3,"label":"2段以上の連鎖を3回発生させる"},{"type":"color","target":15,"label":"青のコマを15個消す","color":1}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":21,"label":"青のコマを21個消す","color":1},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":6,"label":"1回の操作で6連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"color","target":19,"label":"黄のコマを19個消す","color":2}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":13,"goals":[{"type":"color","target":19,"label":"青のコマを19個消す","color":1},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":7,"label":"1回の操作で7連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":8,"goals":[{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":12,"goals":[{"type":"chainDepth","target":7,"label":"1回の操作で7連鎖以上を達成する"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"special","target":6,"label":"特別なコマを6個作る"}]},{"name":"ランダム条件","moveLimit":15,"goals":[{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"color","target":21,"label":"黄のコマを21個消す","color":2},{"type":"chainDepth","target":8,"label":"1回の操作で8連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":8,"goals":[{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"color","target":21,"label":"緑のコマを21個消す","color":3},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":22,"goals":[{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":9,"goals":[{"type":"color","target":21,"label":"青のコマを21個消す","color":1},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"color","target":22,"label":"黄のコマを22個消す","color":2}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"color","target":19,"label":"緑のコマを19個消す","color":3}]},{"name":"ランダム条件","moveLimit":24,"goals":[{"type":"color","target":20,"label":"黄のコマを20個消す","color":2},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":22,"label":"黄のコマを22個消す","color":2},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":11,"goals":[{"type":"color","target":20,"label":"赤のコマを20個消す","color":0},{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":24,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":5,"goals":[{"type":"color","target":17,"label":"黄のコマを17個消す","color":2}]},{"name":"ランダム条件","moveLimit":8,"goals":[{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":25,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":23,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"color","target":18,"label":"黄のコマを18個消す","color":2}]},{"name":"ランダム条件","moveLimit":11,"goals":[{"type":"color","target":18,"label":"赤のコマを18個消す","color":0},{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":23,"goals":[{"type":"color","target":20,"label":"赤のコマを20個消す","color":0},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"color","target":23,"label":"赤のコマを23個消す","color":0}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"color","target":23,"label":"赤のコマを23個消す","color":0}]},{"name":"ランダム条件","moveLimit":22,"goals":[{"type":"color","target":20,"label":"黄のコマを20個消す","color":2},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":11,"goals":[{"type":"color","target":18,"label":"青のコマを18個消す","color":1},{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"color","target":24,"label":"黄のコマを24個消す","color":2},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":9,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"color","target":16,"label":"赤のコマを16個消す","color":0}]},{"name":"ランダム条件","moveLimit":8,"goals":[{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"color","target":20,"label":"黄のコマを20個消す","color":2}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"special","target":6,"label":"特別なコマを6個作る"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"special","target":6,"label":"特別なコマを6個作る"}]},{"name":"ランダム条件","moveLimit":22,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":22,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":27,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":22,"goals":[{"type":"color","target":18,"label":"緑のコマを18個消す","color":3},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":24,"goals":[{"type":"color","target":17,"label":"赤のコマを17個消す","color":0},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":9,"goals":[{"type":"color","target":23,"label":"赤のコマを23個消す","color":0},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":9,"goals":[{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"color","target":21,"label":"赤のコマを21個消す","color":0}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"color","target":22,"label":"緑のコマを22個消す","color":3}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"color","target":23,"label":"赤のコマを23個消す","color":0}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":23,"label":"黄のコマを23個消す","color":2},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":20,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":17,"label":"黄のコマを17個消す","color":2},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"color","target":22,"label":"赤のコマを22個消す","color":0}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":23,"label":"黄のコマを23個消す","color":2},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"color","target":23,"label":"赤のコマを23個消す","color":0}]},{"name":"ランダム条件","moveLimit":20,"goals":[{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"color","target":18,"label":"赤のコマを18個消す","color":0},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":9,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"color","target":24,"label":"青のコマを24個消す","color":1}]},{"name":"ランダム条件","moveLimit":23,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":18,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"special","target":7,"label":"特別なコマを7個作る"}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":16,"label":"黄のコマを16個消す","color":2},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":22,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":24,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"color","target":16,"label":"緑のコマを16個消す","color":3},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":23,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"color","target":17,"label":"青のコマを17個消す","color":1},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"color","target":20,"label":"青のコマを20個消す","color":1}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":17,"label":"黄のコマを17個消す","color":2},{"type":"special","target":7,"label":"特別なコマを7個作る"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":9,"goals":[{"type":"color","target":23,"label":"青のコマを23個消す","color":1},{"type":"special","target":7,"label":"特別なコマを7個作る"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":18,"label":"赤のコマを18個消す","color":0},{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":25,"goals":[{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"color","target":23,"label":"緑のコマを23個消す","color":3}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":22,"label":"黄のコマを22個消す","color":2},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":18,"goals":[{"type":"special","target":7,"label":"特別なコマを7個作る"},{"type":"color","target":19,"label":"緑のコマを19個消す","color":3},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":8,"goals":[{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"special","target":6,"label":"特別なコマを6個作る"}]},{"name":"ランダム条件","moveLimit":8,"goals":[{"type":"color","target":19,"label":"緑のコマを19個消す","color":3},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":6,"goals":[{"type":"special","target":5,"label":"特別なコマを5個作る"}]},{"name":"ランダム条件","moveLimit":22,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"},{"type":"color","target":21,"label":"緑のコマを21個消す","color":3}]},{"name":"ランダム条件","moveLimit":23,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":24,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":9,"goals":[{"type":"color","target":16,"label":"緑のコマを16個消す","color":3},{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"}]},{"name":"ランダム条件","moveLimit":20,"goals":[{"type":"special","target":6,"label":"特別なコマを6個作る"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":6,"label":"2段以上の連鎖を6回発生させる"}]},{"name":"ランダム条件","moveLimit":23,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"color","target":21,"label":"緑のコマを21個消す","color":3}]},{"name":"ランダム条件","moveLimit":10,"goals":[{"type":"color","target":19,"label":"赤のコマを19個消す","color":0},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"special","target":7,"label":"特別なコマを7個作る"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"special","target":6,"label":"特別なコマを6個作る"}]},{"name":"ランダム条件","moveLimit":21,"goals":[{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"special","target":7,"label":"特別なコマを7個作る"}]},{"name":"ランダム条件","moveLimit":23,"goals":[{"type":"color","target":23,"label":"赤のコマを23個消す","color":0},{"type":"chainCount","target":5,"label":"2段以上の連鎖を5回発生させる"},{"type":"chainDepth","target":9,"label":"1回の操作で9連鎖以上を達成する"}]},{"name":"ランダム条件","moveLimit":7,"goals":[{"type":"color","target":23,"label":"青のコマを23個消す","color":1}]}];
 
-// ステージ5(STAGES.length番目)以降は毎回ランダムな条件を生成する。
+// ステージ101以降は毎回ランダムな条件を生成する(固定はしない)。
 // 一度生成したステージは dynamicStages にキャッシュし、進捗を保持できるようにする
 const dynamicStages = [];
 
@@ -333,8 +423,26 @@ function randomInt(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
+// ステージ1〜100のbotシミュレーション結果から回帰分析で求めた操作回数の簡易推定式。
+// ステージ101以降は毎回盤面が変わるため、重いシミュレーションの代わりにこの式で高速に見積もる
+const MOVE_LIMIT_REGRESSION_WEIGHTS = [6.851158633751879, 0.02377939688365127, 0.023808650358909667, 0.2834651903266834, 0.5593019046310798]; // [切片, color.target, special.target, chainCount.target, (chainDepth.target-4)^2]
+
+function estimateMoveLimit(goals) {
+  let colorTarget = 0, specialTarget = 0, chainCountTarget = 0, chainDepthTarget = 0;
+  for (const g of goals) {
+    if (g.type === "color") colorTarget = g.target;
+    if (g.type === "special") specialTarget = g.target;
+    if (g.type === "chainCount") chainCountTarget = g.target;
+    if (g.type === "chainDepth") chainDepthTarget = g.target;
+  }
+  const chainDepthQuad = chainDepthTarget > 0 ? Math.pow(chainDepthTarget - 4, 2) : 0;
+  const [w0, w1, w2, w3, w4] = MOVE_LIMIT_REGRESSION_WEIGHTS;
+  const estimate = w0 + w1 * colorTarget + w2 * specialTarget + w3 * chainCountTarget + w4 * chainDepthQuad;
+  return Math.max(3, Math.round(estimate));
+}
+
 function generateRandomStage(stageNumber) {
-  const difficulty = Math.min(stageNumber - STAGES.length, 3); // 難易度の伸びは緩やかに抑える
+  const difficulty = Math.min(stageNumber - BAKED_STAGES.length, 3); // 難易度の伸びは緩やかに抑える
   const allTypes = ["color", "chainCount", "chainDepth", "special"];
   const shuffled = [...allTypes].sort(() => Math.random() - 0.5);
   const goalCount = randomInt(1, 3);
@@ -349,20 +457,22 @@ function generateRandomStage(stageNumber) {
       return { type, target, label: `2段以上の連鎖を${target}回発生させる` };
     }
     if (type === "chainDepth") {
-      // 連鎖深さは難易度に関わらずMAX値(CHAIN_DEPTH_MAX)で固定する
-      return { type, target: CHAIN_DEPTH_MAX, label: `1回の操作で${CHAIN_DEPTH_MAX}連鎖以上を達成する` };
+      // 連鎖深さの目標はステージ番号に応じて徐々に上がり、CHAIN_DEPTH_MAXで打ち止めになる
+      const target = chainDepthTargetForStage(stageNumber);
+      return { type, target, label: `1回の操作で${target}連鎖以上を達成する` };
     }
     const target = randomInt(2, 4) + difficulty;
     return { type: "special", target, label: `特別なコマを${target}個作る` };
   });
-  return { name: "ランダム条件", goals };
+  const moveLimit = estimateMoveLimit(goals);
+  return { name: "ランダム条件", goals, moveLimit };
 }
 
 function getStage(index) {
-  if (index < STAGES.length) return STAGES[index];
-  const dynamicIndex = index - STAGES.length;
+  if (index < BAKED_STAGES.length) return BAKED_STAGES[index];
+  const dynamicIndex = index - BAKED_STAGES.length;
   while (dynamicStages.length <= dynamicIndex) {
-    dynamicStages.push(generateRandomStage(STAGES.length + dynamicStages.length + 1));
+    dynamicStages.push(generateRandomStage(BAKED_STAGES.length + dynamicStages.length + 1));
   }
   return dynamicStages[dynamicIndex];
 }
@@ -373,6 +483,7 @@ let score = 0;
 let selected = null;
 let busy = false;
 let stageIndex = 0;
+let movesRemaining = 0;
 
 // ステージが5進むごとに見た目が進化する、1枚のSVG画像で描いたうんこキャラクター
 // tierが上がるごとに装飾(サングラス→王冠→炎→虹)を重ねて描き足していく
@@ -472,18 +583,47 @@ function buildMascotSVG(tier) {
 }
 
 const boardEl = document.getElementById("board");
+const boardWrapEl = document.getElementById("board-wrap");
 const scoreEl = document.getElementById("score");
 const stageTitleEl = document.getElementById("stage-title");
+const movesRemainingEl = document.getElementById("moves-remaining");
 const goalListEl = document.getElementById("goal-list");
 const stageBannerEl = document.getElementById("stage-banner");
 const mascotEl = document.getElementById("mascot");
 const mascotCaptionEl = document.getElementById("mascot-caption");
+const mascotEvolveBadgeEl = document.getElementById("mascot-evolve-badge");
+let lastMascotTier = null; // 初回描画では進化演出を出さないようにするため null で開始
 
 const cellSizePx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
 const gapPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 const UNIT = cellSizePx + gapPx;
-const FALL_MS = 260;
+const BOARD_PADDING = 10; // #board の padding と一致させる
+const FALL_MS = 520; // 通常プレイ時の落下アニメーション(目が疲れにくいようゆっくりに)
+const FALL_MS_FAST = 260; // ステージ開始時の偶発マッチ解消では、待たせないよう元の速さのまま
 const CLEAR_MS = 180;
+
+// 特別なコマが発動した時の演出(行/列を貫くフラッシュ、爆弾の爆発バースト)を生成する
+function spawnGimmicks(gimmicks) {
+  for (const g of gimmicks) {
+    const el = document.createElement("div");
+    if (g.type === "row") {
+      el.className = "gimmick gimmick-row";
+      el.style.top = `${BOARD_PADDING + g.r * UNIT}px`;
+    } else if (g.type === "col") {
+      el.className = "gimmick gimmick-col";
+      el.style.left = `${BOARD_PADDING + g.c * UNIT}px`;
+    } else if (g.type === "bomb") {
+      el.className = "gimmick gimmick-bomb";
+      el.style.top = `${BOARD_PADDING + g.r * UNIT + UNIT / 2}px`;
+      el.style.left = `${BOARD_PADDING + g.c * UNIT + UNIT / 2}px`;
+    } else {
+      continue;
+    }
+    boardWrapEl.appendChild(el);
+    el.addEventListener("animationend", () => el.remove());
+    setTimeout(() => el.remove(), 1500); // animationendが発火しなかった場合の保険
+  }
+}
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -588,19 +728,22 @@ function cellKey(r, c) {
   return `${r},${c}`;
 }
 
-// 特別なコマなら種類に応じたクラスと方向バッジ(↔/↕)をセルに付与する
+// 特別なコマなら種類に応じたクラスとバッジ(↔/↕/💥)をセルに付与する
 function applySpecialStyle(cell, r, c) {
   const type = special[r][c];
+  const badgeByType = { row: "↔", col: "↕", bomb: "💥" };
   if (type === "row") {
     cell.classList.add("special-row");
   } else if (type === "col") {
     cell.classList.add("special-col");
+  } else if (type === "bomb") {
+    cell.classList.add("special-bomb");
   } else {
     return;
   }
   const badge = document.createElement("span");
   badge.className = "badge";
-  badge.textContent = type === "row" ? "↔" : "↕";
+  badge.textContent = badgeByType[type];
   cell.appendChild(badge);
 }
 
@@ -628,7 +771,7 @@ function applyGravityAndRefill(b, sp) {
 
 // swapHint: ユーザーの直接操作で発生した最初のマッチの場合、交換した2マスの位置
 // {a:{r,c}, b:{r,c}} を渡す。縦4つ以上の連でどのマスを特別なコマにするか選ぶ際のヒントに使う
-async function resolveBoard(swapHint) {
+async function resolveBoard(swapHint, fallMs = FALL_MS) {
   let any = false;
   let firstIteration = true;
   let iterations = 0;
@@ -639,14 +782,38 @@ async function resolveBoard(swapHint) {
     any = true;
     iterations++;
 
-    // 4つ以上の連 → 1マスを特別なコマに変換し、そのマスは消滅対象から除外する
-    // 縦の連なら「横一列を消せる」('row')、横の連なら「縦一列を消せる」('col')になる
     const upgrades = [];
     const upgradeKeys = new Set();
+
+    // 縦の連(3以上)と横の連(3以上)が交差するマス → 爆弾(周囲3x3マスを消せる)に変換する。
+    // 最優先で処理し、そのマスは他の特別なコマの変換先候補から除外する
+    const hRunByCell = new Map();
+    const vRunByCell = new Map();
+    for (const run of runs) {
+      for (const cell of run.cells) {
+        const key = cellKey(cell.r, cell.c);
+        if (run.dir === "h") hRunByCell.set(key, run);
+        else vRunByCell.set(key, run);
+      }
+    }
+    for (const [key, hRun] of hRunByCell) {
+      const vRun = vRunByCell.get(key);
+      if (!vRun) continue;
+      const [r, c] = key.split(",").map(Number);
+      if (special[r][c] !== null) continue; // 既存の特別なコマは上書きしない
+      if (upgradeKeys.has(key)) continue;
+      upgradeKeys.add(key);
+      upgrades.push({ r, c, type: "bomb" });
+    }
+
+    // 4つ以上の連 → 1マスを特別なコマに変換し、そのマスは消滅対象から除外する
+    // 縦の連なら「横一列を消せる」('row')、横の連なら「縦一列を消せる」('col')になる
     for (const run of runs) {
       if (run.cells.length >= 4) {
-        // すでに特別なコマが乗っているマスは変換先として選ばない(発動せず上書きされてしまうため)
-        const freeCells = run.cells.filter((cell) => special[cell.r][cell.c] === null);
+        // すでに特別なコマが乗っているマス・爆弾に変換されるマスは変換先として選ばない
+        const freeCells = run.cells.filter(
+          (cell) => special[cell.r][cell.c] === null && !upgradeKeys.has(cellKey(cell.r, cell.c))
+        );
         const candidates = freeCells.length > 0 ? freeCells : run.cells;
         let pick = null;
         if (firstIteration && swapHint) {
@@ -675,7 +842,9 @@ async function resolveBoard(swapHint) {
     for (const key of upgradeKeys) clearSet.delete(key);
 
     // すでに盤面にある特別なコマが消滅対象に含まれていたら、その一列をまとめて消滅対象に広げる(連鎖も対応)
+    // triggeredGimmicks には発動した特別なコマの種類と位置を記録し、演出(ギミック)に使う
     const triggered = new Set();
+    const triggeredGimmicks = [];
     const queue = Array.from(clearSet);
     while (queue.length > 0) {
       const key = queue.shift();
@@ -684,6 +853,7 @@ async function resolveBoard(swapHint) {
       const type = special[r][c];
       if (type === "row") {
         triggered.add(key);
+        triggeredGimmicks.push({ type: "row", r, c });
         for (let cc = 0; cc < COLS; cc++) {
           const lineKey = cellKey(r, cc);
           if (!clearSet.has(lineKey)) {
@@ -693,11 +863,25 @@ async function resolveBoard(swapHint) {
         }
       } else if (type === "col") {
         triggered.add(key);
+        triggeredGimmicks.push({ type: "col", r, c });
         for (let rr = 0; rr < ROWS; rr++) {
           const lineKey = cellKey(rr, c);
           if (!clearSet.has(lineKey)) {
             clearSet.add(lineKey);
             queue.push(lineKey);
+          }
+        }
+      } else if (type === "bomb") {
+        triggered.add(key);
+        triggeredGimmicks.push({ type: "bomb", r, c });
+        for (let rr = r - 1; rr <= r + 1; rr++) {
+          for (let cc = c - 1; cc <= c + 1; cc++) {
+            if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+            const areaKey = cellKey(rr, cc);
+            if (!clearSet.has(areaKey)) {
+              clearSet.add(areaKey);
+              queue.push(areaKey);
+            }
           }
         }
       }
@@ -710,6 +894,7 @@ async function resolveBoard(swapHint) {
     }
 
     renderClearing(clearGrid);
+    spawnGimmicks(triggeredGimmicks);
     await delay(CLEAR_MS);
 
     const colorTally = Array(COLORS).fill(0);
@@ -730,8 +915,8 @@ async function resolveBoard(swapHint) {
     if (upgrades.length > 0) recordSpecialCreated(upgrades.length);
 
     const fallMap = applyGravityAndRefill(board, special);
-    renderWithFall(fallMap);
-    await delay(FALL_MS);
+    renderWithFall(fallMap, fallMs);
+    await delay(fallMs);
 
     firstIteration = false;
   }
@@ -747,9 +932,12 @@ async function startStage({ resetScore = false } = {}) {
   busy = true;
   fillRandomBoard();
   render();
-  await resolveBoard(); // 偶発的な初期マッチを解消(ここでの進捗加算は直後に打ち消す)
+  // 偶発的な初期マッチを解消(ここでの進捗加算は直後に打ち消す)。
+  // プレイヤーの操作を待たせないよう、ここだけは元の速さ(FALL_MS_FAST)で落とす
+  await resolveBoard(undefined, FALL_MS_FAST);
   if (resetScore) score = 0;
   resetGoalProgress();
+  movesRemaining = currentStage().moveLimit;
   selected = null;
   render();
   renderStageUI();
@@ -763,14 +951,36 @@ function resetGame() {
   startStage({ resetScore: true });
 }
 
+// 盤面中央にバナーを一時表示する(ステージクリア・進化・新ステージ開始などで共通利用)
+async function showBanner(text, ms = 1300) {
+  stageBannerEl.textContent = text;
+  stageBannerEl.classList.add("show");
+  await delay(ms);
+  stageBannerEl.classList.remove("show");
+  await delay(150); // 連続表示時にも一瞬消えて区切りがつくように
+}
+
 // ステージクリア時の表示と次のステージへの進行(ステージ5以降も無限に続く)
 async function handleStageClear() {
-  stageBannerEl.textContent = `${currentStage().name} クリア!`;
-  stageBannerEl.classList.add("show");
-  await delay(1300);
-  stageBannerEl.classList.remove("show");
+  await showBanner(`${currentStage().name} クリア!`);
 
+  const prevMascotTier = lastMascotTier;
   stageIndex++;
+  const nextMascotTier = Math.min(
+    Math.floor(stageIndex / STAGES_PER_MASCOT_TIER),
+    MASCOT_CAPTIONS.length - 1
+  );
+  if (prevMascotTier !== null && nextMascotTier > prevMascotTier) {
+    await showBanner("✨ キャラクターが進化した! ✨");
+  }
+
+  await showBanner(`ステージ${stageIndex + 1}: ${currentStage().name} スタート!`);
+  await startStage({ resetScore: false });
+}
+
+// 操作回数を使い切って目標未達のまま終わった場合、同じステージを(新しい盤面で)やり直す
+async function handleStageFail() {
+  await showBanner("操作回数切れ... もう一度挑戦!");
   await startStage({ resetScore: false });
 }
 
@@ -778,7 +988,53 @@ function isAdjacent(a, b) {
   return Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
 }
 
-async function onCellClick(r, c) {
+const SWAP_MS = 150;
+
+// 交換前に、対象の2マスが実際にスライドして入れ替わる様子を見せる(データはまだ変更しない)
+async function animateSwapPreview(a, b) {
+  const aEl = boardEl.children[a.r * COLS + a.c];
+  const bEl = boardEl.children[b.r * COLS + b.c];
+  if (!aEl || !bEl) return;
+
+  const dx = (b.c - a.c) * UNIT;
+  const dy = (b.r - a.r) * UNIT;
+
+  aEl.style.transition = `transform ${SWAP_MS}ms ease-in-out`;
+  bEl.style.transition = `transform ${SWAP_MS}ms ease-in-out`;
+  aEl.style.zIndex = "2";
+  bEl.style.zIndex = "2";
+  aEl.style.transform = `translate(${dx}px, ${dy}px)`;
+  bEl.style.transform = `translate(${-dx}px, ${-dy}px)`;
+
+  await delay(SWAP_MS);
+}
+
+// マスaとbを実際に交換し、解決・ステージ判定まで行う(クリック操作・ドラッグ操作の両方から呼ばれる)
+async function performSwap(a, b) {
+  busy = true;
+  await animateSwapPreview(a, b);
+  const tmpColor = board[a.r][a.c];
+  const tmpSpecial = special[a.r][a.c];
+  board[a.r][a.c] = board[b.r][b.c];
+  special[a.r][a.c] = special[b.r][b.c];
+  board[b.r][b.c] = tmpColor;
+  special[b.r][b.c] = tmpSpecial;
+  selected = null;
+  render();
+  await resolveBoard({ a, b });
+  movesRemaining--;
+  render();
+  renderStageUI();
+  if (isStageCleared()) {
+    await handleStageClear();
+  } else if (movesRemaining <= 0) {
+    await handleStageFail();
+  }
+  busy = false;
+}
+
+// マスをタップ(クリック)した時の選択・交換ロジック
+function handleCellTap(r, c) {
   if (busy) return;
   const pos = { r, c };
   if (!selected) {
@@ -792,27 +1048,58 @@ async function onCellClick(r, c) {
     return;
   }
   if (isAdjacent(selected, pos)) {
-    busy = true;
     const a = { r: selected.r, c: selected.c };
-    const b = { r, c };
-    const tmpColor = board[a.r][a.c];
-    const tmpSpecial = special[a.r][a.c];
-    board[a.r][a.c] = board[b.r][b.c];
-    special[a.r][a.c] = special[b.r][b.c];
-    board[b.r][b.c] = tmpColor;
-    special[b.r][b.c] = tmpSpecial;
-    selected = null;
-    render();
-    await resolveBoard({ a, b });
-    render();
-    if (isStageCleared()) {
-      await handleStageClear();
-    }
-    busy = false;
+    performSwap(a, pos);
   } else {
     selected = pos;
     render();
   }
+}
+
+// ドラッグ(スワイプ)操作での交換。マウス・タッチ両対応のPointer Eventsを使う
+let dragStart = null;
+let dragStartClientPos = null;
+let dragHandled = false;
+const DRAG_THRESHOLD_PX = UNIT * 0.35;
+
+function onCellPointerDown(e, r, c) {
+  if (busy) return;
+  dragStart = { r, c };
+  dragStartClientPos = { x: e.clientX, y: e.clientY };
+  dragHandled = false;
+  document.addEventListener("pointermove", onDragPointerMove);
+  document.addEventListener("pointerup", onDragPointerUp);
+  document.addEventListener("pointercancel", onDragPointerUp);
+}
+
+function onDragPointerMove(e) {
+  if (!dragStart || dragHandled || busy) return;
+  const dx = e.clientX - dragStartClientPos.x;
+  const dy = e.clientY - dragStartClientPos.y;
+  if (Math.abs(dx) < DRAG_THRESHOLD_PX && Math.abs(dy) < DRAG_THRESHOLD_PX) return;
+
+  let dr = 0;
+  let dc = 0;
+  if (Math.abs(dx) > Math.abs(dy)) dc = dx > 0 ? 1 : -1;
+  else dr = dy > 0 ? 1 : -1;
+
+  const target = { r: dragStart.r + dr, c: dragStart.c + dc };
+  if (target.r < 0 || target.r >= ROWS || target.c < 0 || target.c >= COLS) return;
+
+  dragHandled = true;
+  performSwap(dragStart, target);
+}
+
+function onDragPointerUp() {
+  document.removeEventListener("pointermove", onDragPointerMove);
+  document.removeEventListener("pointerup", onDragPointerUp);
+  document.removeEventListener("pointercancel", onDragPointerUp);
+
+  if (!dragHandled && dragStart) {
+    handleCellTap(dragStart.r, dragStart.c);
+  }
+  dragStart = null;
+  dragStartClientPos = null;
 }
 
 function render() {
@@ -827,7 +1114,7 @@ function render() {
       if (selected && selected.r === r && selected.c === c) {
         cell.classList.add("selected");
       }
-      cell.addEventListener("click", () => onCellClick(r, c));
+      cell.addEventListener("pointerdown", (e) => onCellPointerDown(e, r, c));
       boardEl.appendChild(cell);
     }
   }
@@ -852,7 +1139,7 @@ function renderClearing(clearGrid) {
 }
 
 // fallMap[r][c] 分だけ上から落ちてくるようにアニメーションさせて描画
-function renderWithFall(fallMap) {
+function renderWithFall(fallMap, fallMs = FALL_MS) {
   boardEl.innerHTML = "";
   const falling = [];
   for (let r = 0; r < ROWS; r++) {
@@ -876,7 +1163,7 @@ function renderWithFall(fallMap) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       for (const cell of falling) {
-        cell.style.transition = `transform ${FALL_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+        cell.style.transition = `transform ${fallMs}ms cubic-bezier(0.4, 0, 0.2, 1)`;
         cell.style.transform = "translateY(0)";
       }
     });
@@ -888,14 +1175,26 @@ function renderMascot() {
     Math.floor(stageIndex / STAGES_PER_MASCOT_TIER),
     MASCOT_CAPTIONS.length - 1
   );
+  const evolved = lastMascotTier !== null && tier > lastMascotTier;
+
   mascotEl.innerHTML = buildMascotSVG(tier);
-  mascotEl.className = `mascot-tier-${tier}`;
+  mascotEl.className = `mascot-tier-${tier}${evolved ? " evolving" : ""}`;
   mascotCaptionEl.textContent = MASCOT_CAPTIONS[tier];
+
+  if (evolved) {
+    mascotEvolveBadgeEl.classList.remove("show");
+    // 同じ要素に同じアニメーションクラスを連続で付け直しても再生されるよう、一度リフローさせる
+    void mascotEvolveBadgeEl.offsetWidth;
+    mascotEvolveBadgeEl.classList.add("show");
+  }
+  lastMascotTier = tier;
 }
 
 function renderStageUI() {
   const stage = currentStage();
   stageTitleEl.textContent = `ステージ${stageIndex + 1}: ${stage.name}`;
+  movesRemainingEl.textContent = movesRemaining;
+  movesRemainingEl.classList.toggle("low", movesRemaining <= 2);
   goalListEl.innerHTML = "";
   for (const g of stage.goals) {
     const li = document.createElement("li");
