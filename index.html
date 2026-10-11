@@ -149,9 +149,11 @@
     display: flex;
     justify-content: center;
   }
-  #mascot svg {
+  #mascot svg,
+  #mascot img {
     width: 110px;
     height: 110px;
+    object-fit: contain;
   }
   #mascot.evolving svg {
     animation: mascotEvolveBurst 1.4s cubic-bezier(0.2, 0.8, 0.3, 1);
@@ -508,10 +510,12 @@ const MASCOT_CAPTIONS = [
 ];
 const STAGES_PER_MASCOT_TIER = 5;
 
-// うんこキャラクターの見た目(SVG)。Obsidian Vaultの
-// Project/ゲーム開発/マッチングゲームの開発/mascot/tier0〜4.md にエクスポートしてあり、
-// そちらの内容を書き換えて「反映して」と伝えると、この配列が更新される
-const MASCOT_SVGS = [
+// うんこキャラクターの見た目。各要素は innerHTML に直接差し込むHTML文字列で、
+// SVGコード(<svg>...</svg>)でも、画像ファイルをBase64化した <img src="data:...">
+// でもよい。Obsidian Vaultの Project/ゲーム開発/マッチングゲームの開発/mascot/
+// tier0〜4.md にエクスポートしてあり、そちらの内容を書き換えて「反映して」と伝えると
+// この配列が更新される
+const MASCOT_ASSETS = [
   `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
     <g stroke="#5b3a1f" stroke-width="2.5">
       <circle cx="60" cy="95" r="26" fill="#8b5e34"/>
@@ -1239,7 +1243,7 @@ function renderMascot() {
   );
   const evolved = lastMascotTier !== null && tier > lastMascotTier;
 
-  mascotEl.innerHTML = MASCOT_SVGS[tier];
+  mascotEl.innerHTML = MASCOT_ASSETS[tier];
   mascotEl.className = `mascot-tier-${tier}${evolved ? " evolving" : ""}`;
   mascotCaptionEl.textContent = MASCOT_CAPTIONS[tier];
 
