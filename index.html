@@ -508,38 +508,11 @@ const MASCOT_CAPTIONS = [
 ];
 const STAGES_PER_MASCOT_TIER = 5;
 
-function sparklePath(x, y, size) {
-  const s = size;
-  return `M${x} ${y - s} L${x + s * 0.3} ${y - s * 0.3} L${x + s} ${y} L${x + s * 0.3} ${y + s * 0.3} L${x} ${y + s} L${x - s * 0.3} ${y + s * 0.3} L${x - s} ${y} L${x - s * 0.3} ${y - s * 0.3} Z`;
-}
-
-function buildMascotSVG(tier) {
-  const parts = [];
-
-  // tier4: 一番奥に虹のアーチ
-  if (tier >= 4) {
-    const rainbowColors = ["#ff5252", "#ffb74d", "#fff176", "#81c784", "#64b5f6", "#ba68c8"];
-    rainbowColors.forEach((color, i) => {
-      const radius = 52 - i * 6;
-      parts.push(
-        `<path d="M${60 - radius} 96 A ${radius} ${radius} 0 0 1 ${60 + radius} 96" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round"/>`
-      );
-    });
-  }
-
-  // tier3: 左右に炎のオーラ
-  if (tier >= 3) {
-    const flame = (x, y, scale, color, innerColor) => `
-      <g transform="translate(${x} ${y}) scale(${scale})">
-        <path d="M0 20 C-10 5 -6 -15 0 -22 C6 -15 10 5 0 20 Z" fill="${color}"/>
-        <path d="M0 12 C-5 2 -3 -8 0 -12 C3 -8 5 2 0 12 Z" fill="${innerColor}"/>
-      </g>`;
-    parts.push(flame(18, 68, 1.1, "#ff7b25", "#ffd54f"));
-    parts.push(flame(102, 68, 1.1, "#ff7b25", "#ffd54f"));
-  }
-
-  // 本体(うんこの渦巻き)
-  parts.push(`
+// うんこキャラクターの見た目(SVG)。Obsidian Vaultの
+// Project/ゲーム開発/マッチングゲームの開発/mascot/tier0〜4.md にエクスポートしてあり、
+// そちらの内容を書き換えて「反映して」と伝えると、この配列が更新される
+const MASCOT_SVGS = [
+  `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
     <g stroke="#5b3a1f" stroke-width="2.5">
       <circle cx="60" cy="95" r="26" fill="#8b5e34"/>
       <circle cx="59" cy="69" r="21" fill="#946b40"/>
@@ -547,11 +520,23 @@ function buildMascotSVG(tier) {
       <circle cx="68" cy="31" r="9" fill="#a37c52"/>
       <circle cx="71" cy="20" r="5" fill="#a98157"/>
     </g>
-  `);
-
-  // 目と口(tier1でサングラスに隠れる)
-  if (tier >= 1) {
-    parts.push(`
+  
+      <g>
+        <circle cx="50" cy="70" r="6" fill="#fff"/>
+        <circle cx="67" cy="68" r="6" fill="#fff"/>
+        <circle cx="51" cy="71" r="3" fill="#2b2b2b"/>
+        <circle cx="68" cy="69" r="3" fill="#2b2b2b"/>
+      </g>
+    <path d="M50 82 Q59 90 69 81" stroke="#3a2415" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+  `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#5b3a1f" stroke-width="2.5">
+      <circle cx="60" cy="95" r="26" fill="#8b5e34"/>
+      <circle cx="59" cy="69" r="21" fill="#946b40"/>
+      <circle cx="64" cy="48" r="15" fill="#9c7349"/>
+      <circle cx="68" cy="31" r="9" fill="#a37c52"/>
+      <circle cx="71" cy="20" r="5" fill="#a98157"/>
+    </g>
+  
       <g>
         <ellipse cx="50" cy="70" rx="9" ry="7" fill="#1a1a1a"/>
         <ellipse cx="67" cy="68" rx="9" ry="7" fill="#1a1a1a"/>
@@ -559,40 +544,105 @@ function buildMascotSVG(tier) {
         <circle cx="47" cy="67" r="2" fill="#ffffff" opacity="0.6"/>
         <circle cx="64" cy="65" r="2" fill="#ffffff" opacity="0.6"/>
       </g>
-    `);
-  } else {
-    parts.push(`
+    <path d="M50 82 Q59 90 69 81" stroke="#3a2415" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+  `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#5b3a1f" stroke-width="2.5">
+      <circle cx="60" cy="95" r="26" fill="#8b5e34"/>
+      <circle cx="59" cy="69" r="21" fill="#946b40"/>
+      <circle cx="64" cy="48" r="15" fill="#9c7349"/>
+      <circle cx="68" cy="31" r="9" fill="#a37c52"/>
+      <circle cx="71" cy="20" r="5" fill="#a98157"/>
+    </g>
+  
       <g>
-        <circle cx="50" cy="70" r="6" fill="#fff"/>
-        <circle cx="67" cy="68" r="6" fill="#fff"/>
-        <circle cx="51" cy="71" r="3" fill="#2b2b2b"/>
-        <circle cx="68" cy="69" r="3" fill="#2b2b2b"/>
+        <ellipse cx="50" cy="70" rx="9" ry="7" fill="#1a1a1a"/>
+        <ellipse cx="67" cy="68" rx="9" ry="7" fill="#1a1a1a"/>
+        <rect x="58" y="65" width="8" height="3" fill="#1a1a1a"/>
+        <circle cx="47" cy="67" r="2" fill="#ffffff" opacity="0.6"/>
+        <circle cx="64" cy="65" r="2" fill="#ffffff" opacity="0.6"/>
       </g>
-    `);
-  }
-  parts.push(`<path d="M50 82 Q59 90 69 81" stroke="#3a2415" stroke-width="3" fill="none" stroke-linecap="round"/>`);
-
-  // tier2以上: 王冠とキラキラ
-  if (tier >= 2) {
-    const cx = 70;
-    const baseY = 18; // 中央の頂点がviewBoxの外に出ないよう余裕を持たせる
-    parts.push(`
+    <path d="M50 82 Q59 90 69 81" stroke="#3a2415" stroke-width="3" fill="none" stroke-linecap="round"/>
       <g stroke="#b8860b" stroke-width="1.5">
-        <rect x="${cx - 18}" y="${baseY}" width="36" height="9" rx="2" fill="#ffd700"/>
-        <polygon points="${cx - 18},${baseY} ${cx - 10},${baseY - 11} ${cx - 2},${baseY}" fill="#ffd700"/>
-        <polygon points="${cx - 7},${baseY} ${cx},${baseY - 15} ${cx + 7},${baseY}" fill="#ffd700"/>
-        <polygon points="${cx + 2},${baseY} ${cx + 10},${baseY - 11} ${cx + 18},${baseY}" fill="#ffd700"/>
+        <rect x="52" y="18" width="36" height="9" rx="2" fill="#ffd700"/>
+        <polygon points="52,18 60,7 68,18" fill="#ffd700"/>
+        <polygon points="63,18 70,3 77,18" fill="#ffd700"/>
+        <polygon points="72,18 80,7 88,18" fill="#ffd700"/>
       </g>
-      <circle cx="${cx - 10}" cy="${baseY - 11}" r="2" fill="#ff4d4d"/>
-      <circle cx="${cx}" cy="${baseY - 15}" r="2.2" fill="#4da6ff"/>
-      <circle cx="${cx + 10}" cy="${baseY - 11}" r="2" fill="#4dff88"/>
-    `);
-    parts.push(`<path d="${sparklePath(20, 30, 7)}" fill="#fff59d"/>`);
-    parts.push(`<path d="${sparklePath(100, 42, 6)}" fill="#fff59d"/>`);
-  }
-
-  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${parts.join("")}</svg>`;
-}
+      <circle cx="60" cy="7" r="2" fill="#ff4d4d"/>
+      <circle cx="70" cy="3" r="2.2" fill="#4da6ff"/>
+      <circle cx="80" cy="7" r="2" fill="#4dff88"/>
+    <path d="M20 23 L22.1 27.9 L27 30 L22.1 32.1 L20 37 L17.9 32.1 L13 30 L17.9 27.9 Z" fill="#fff59d"/><path d="M100 36 L101.8 40.2 L106 42 L101.8 43.8 L100 48 L98.2 43.8 L94 42 L98.2 40.2 Z" fill="#fff59d"/></svg>`,
+  `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(18 68) scale(1.1)">
+        <path d="M0 20 C-10 5 -6 -15 0 -22 C6 -15 10 5 0 20 Z" fill="#ff7b25"/>
+        <path d="M0 12 C-5 2 -3 -8 0 -12 C3 -8 5 2 0 12 Z" fill="#ffd54f"/>
+      </g>
+      <g transform="translate(102 68) scale(1.1)">
+        <path d="M0 20 C-10 5 -6 -15 0 -22 C6 -15 10 5 0 20 Z" fill="#ff7b25"/>
+        <path d="M0 12 C-5 2 -3 -8 0 -12 C3 -8 5 2 0 12 Z" fill="#ffd54f"/>
+      </g>
+    <g stroke="#5b3a1f" stroke-width="2.5">
+      <circle cx="60" cy="95" r="26" fill="#8b5e34"/>
+      <circle cx="59" cy="69" r="21" fill="#946b40"/>
+      <circle cx="64" cy="48" r="15" fill="#9c7349"/>
+      <circle cx="68" cy="31" r="9" fill="#a37c52"/>
+      <circle cx="71" cy="20" r="5" fill="#a98157"/>
+    </g>
+  
+      <g>
+        <ellipse cx="50" cy="70" rx="9" ry="7" fill="#1a1a1a"/>
+        <ellipse cx="67" cy="68" rx="9" ry="7" fill="#1a1a1a"/>
+        <rect x="58" y="65" width="8" height="3" fill="#1a1a1a"/>
+        <circle cx="47" cy="67" r="2" fill="#ffffff" opacity="0.6"/>
+        <circle cx="64" cy="65" r="2" fill="#ffffff" opacity="0.6"/>
+      </g>
+    <path d="M50 82 Q59 90 69 81" stroke="#3a2415" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g stroke="#b8860b" stroke-width="1.5">
+        <rect x="52" y="18" width="36" height="9" rx="2" fill="#ffd700"/>
+        <polygon points="52,18 60,7 68,18" fill="#ffd700"/>
+        <polygon points="63,18 70,3 77,18" fill="#ffd700"/>
+        <polygon points="72,18 80,7 88,18" fill="#ffd700"/>
+      </g>
+      <circle cx="60" cy="7" r="2" fill="#ff4d4d"/>
+      <circle cx="70" cy="3" r="2.2" fill="#4da6ff"/>
+      <circle cx="80" cy="7" r="2" fill="#4dff88"/>
+    <path d="M20 23 L22.1 27.9 L27 30 L22.1 32.1 L20 37 L17.9 32.1 L13 30 L17.9 27.9 Z" fill="#fff59d"/><path d="M100 36 L101.8 40.2 L106 42 L101.8 43.8 L100 48 L98.2 43.8 L94 42 L98.2 40.2 Z" fill="#fff59d"/></svg>`,
+  `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><path d="M8 96 A 52 52 0 0 1 112 96" stroke="#ff5252" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M14 96 A 46 46 0 0 1 106 96" stroke="#ffb74d" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M20 96 A 40 40 0 0 1 100 96" stroke="#fff176" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M26 96 A 34 34 0 0 1 94 96" stroke="#81c784" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M32 96 A 28 28 0 0 1 88 96" stroke="#64b5f6" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M38 96 A 22 22 0 0 1 82 96" stroke="#ba68c8" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <g transform="translate(18 68) scale(1.1)">
+        <path d="M0 20 C-10 5 -6 -15 0 -22 C6 -15 10 5 0 20 Z" fill="#ff7b25"/>
+        <path d="M0 12 C-5 2 -3 -8 0 -12 C3 -8 5 2 0 12 Z" fill="#ffd54f"/>
+      </g>
+      <g transform="translate(102 68) scale(1.1)">
+        <path d="M0 20 C-10 5 -6 -15 0 -22 C6 -15 10 5 0 20 Z" fill="#ff7b25"/>
+        <path d="M0 12 C-5 2 -3 -8 0 -12 C3 -8 5 2 0 12 Z" fill="#ffd54f"/>
+      </g>
+    <g stroke="#5b3a1f" stroke-width="2.5">
+      <circle cx="60" cy="95" r="26" fill="#8b5e34"/>
+      <circle cx="59" cy="69" r="21" fill="#946b40"/>
+      <circle cx="64" cy="48" r="15" fill="#9c7349"/>
+      <circle cx="68" cy="31" r="9" fill="#a37c52"/>
+      <circle cx="71" cy="20" r="5" fill="#a98157"/>
+    </g>
+  
+      <g>
+        <ellipse cx="50" cy="70" rx="9" ry="7" fill="#1a1a1a"/>
+        <ellipse cx="67" cy="68" rx="9" ry="7" fill="#1a1a1a"/>
+        <rect x="58" y="65" width="8" height="3" fill="#1a1a1a"/>
+        <circle cx="47" cy="67" r="2" fill="#ffffff" opacity="0.6"/>
+        <circle cx="64" cy="65" r="2" fill="#ffffff" opacity="0.6"/>
+      </g>
+    <path d="M50 82 Q59 90 69 81" stroke="#3a2415" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g stroke="#b8860b" stroke-width="1.5">
+        <rect x="52" y="18" width="36" height="9" rx="2" fill="#ffd700"/>
+        <polygon points="52,18 60,7 68,18" fill="#ffd700"/>
+        <polygon points="63,18 70,3 77,18" fill="#ffd700"/>
+        <polygon points="72,18 80,7 88,18" fill="#ffd700"/>
+      </g>
+      <circle cx="60" cy="7" r="2" fill="#ff4d4d"/>
+      <circle cx="70" cy="3" r="2.2" fill="#4da6ff"/>
+      <circle cx="80" cy="7" r="2" fill="#4dff88"/>
+    <path d="M20 23 L22.1 27.9 L27 30 L22.1 32.1 L20 37 L17.9 32.1 L13 30 L17.9 27.9 Z" fill="#fff59d"/><path d="M100 36 L101.8 40.2 L106 42 L101.8 43.8 L100 48 L98.2 43.8 L94 42 L98.2 40.2 Z" fill="#fff59d"/></svg>`,
+];
 
 const boardEl = document.getElementById("board");
 const boardWrapEl = document.getElementById("board-wrap");
@@ -1189,7 +1239,7 @@ function renderMascot() {
   );
   const evolved = lastMascotTier !== null && tier > lastMascotTier;
 
-  mascotEl.innerHTML = buildMascotSVG(tier);
+  mascotEl.innerHTML = MASCOT_SVGS[tier];
   mascotEl.className = `mascot-tier-${tier}${evolved ? " evolving" : ""}`;
   mascotCaptionEl.textContent = MASCOT_CAPTIONS[tier];
 
