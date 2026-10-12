@@ -82,6 +82,21 @@
     background: radial-gradient(circle, #fff6e0, #ff9a4d 35%, rgba(255, 90, 54, 0.85) 60%, rgba(255, 90, 54, 0));
     animation: gimmickBombBurst 1.2s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
   }
+  .gimmick-colorbomb {
+    left: 10px;
+    top: 10px;
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
+    border-radius: 8px;
+    background: conic-gradient(from 0deg, #ff5252, #ffb74d, #fff176, #81c784, #64b5f6, #ba68c8, #ff5252);
+    mix-blend-mode: screen;
+    animation: gimmickColorBombFlash 0.9s ease-out forwards;
+  }
+  @keyframes gimmickColorBombFlash {
+    0% { opacity: 0; transform: scale(0.4); }
+    30% { opacity: 0.9; transform: scale(1.05); }
+    100% { opacity: 0; transform: scale(1.3); }
+  }
   @keyframes gimmickRowFlash {
     0% { opacity: 0; transform: scaleY(0.25); }
     18% { opacity: 1; transform: scaleY(1.8); }
@@ -328,9 +343,22 @@
     0%, 100% { box-shadow: 0 0 0 3px #ff5a36 inset, 0 0 8px 3px rgba(255, 90, 54, 0.7); }
     50% { box-shadow: 0 0 0 3px #ff5a36 inset, 0 0 18px 6px rgba(255, 90, 54, 1); }
   }
+  /* 縦か横に5つ以上揃って生まれる、隣と交換した色を盤面から全消去できるカラー爆弾(虹色) */
+  .cell.special-colorBomb {
+    animation: specialGlowColorBomb 1.6s linear infinite;
+  }
+  @keyframes specialGlowColorBomb {
+    0% { box-shadow: 0 0 0 3px #ff5252 inset, 0 0 10px 4px rgba(255, 82, 82, 0.8); }
+    20% { box-shadow: 0 0 0 3px #ffb74d inset, 0 0 10px 4px rgba(255, 183, 77, 0.8); }
+    40% { box-shadow: 0 0 0 3px #fff176 inset, 0 0 10px 4px rgba(255, 241, 118, 0.8); }
+    60% { box-shadow: 0 0 0 3px #81c784 inset, 0 0 10px 4px rgba(129, 199, 132, 0.8); }
+    80% { box-shadow: 0 0 0 3px #64b5f6 inset, 0 0 10px 4px rgba(100, 181, 246, 0.8); }
+    100% { box-shadow: 0 0 0 3px #ba68c8 inset, 0 0 10px 4px rgba(186, 104, 200, 0.8); }
+  }
   .cell.special-row.cleared,
   .cell.special-col.cleared,
-  .cell.special-bomb.cleared {
+  .cell.special-bomb.cleared,
+  .cell.special-colorBomb.cleared {
     animation: pop 0.18s ease forwards;
   }
   /* コマの形はうんこ(💩)固定。色の区別は背景色で表現する(hue-rotateは地色の茶色を基準に回転するため、
@@ -386,6 +414,7 @@
           <li>続けて揃うと連鎖してスコアが伸びます</li>
           <li>縦に4つ以上揃うと ↔ の金色コマに、横に4つ以上揃うと ↕ のシアン色コマに変化します。これらが消えると、それぞれ横一列・縦一列が丸ごと消えます</li>
           <li>縦と横が同時に3つ以上揃うと、💥 の爆弾コマに変化します。消えると周囲3x3マスがまとめて消えます</li>
+          <li>縦か横に5つ以上揃うと、🌈 のカラー爆弾に変化します。隣のマスと交換すると、その色のコマが盤面から全て消えます</li>
           <li>特別なコマが発動すると、光の演出(行/列のフラッシュ、爆弾の爆発エフェクト)が表示されます</li>
           <li>各ステージの目標をすべて満たすとステージクリアになり、次のステージに進みます(ステージ101以降は毎回ランダムな目標になります)</li>
           <li>ステージクリア・キャラクターの進化・新しいステージの開始時には、盤面中央にバナーでお知らせします</li>
@@ -593,6 +622,8 @@ function spawnGimmicks(gimmicks) {
       el.className = "gimmick gimmick-bomb";
       el.style.top = `${BOARD_PADDING + g.r * UNIT + UNIT / 2}px`;
       el.style.left = `${BOARD_PADDING + g.c * UNIT + UNIT / 2}px`;
+    } else if (g.type === "colorBomb") {
+      el.className = "gimmick gimmick-colorbomb";
     } else {
       continue;
     }
@@ -715,16 +746,18 @@ function setPieceContent(cell) {
   cell.appendChild(img);
 }
 
-// 特別なコマなら種類に応じたクラスとバッジ(↔/↕/💥)をセルに付与する
+// 特別なコマなら種類に応じたクラスとバッジ(↔/↕/💥/🌈)をセルに付与する
 function applySpecialStyle(cell, r, c) {
   const type = special[r][c];
-  const badgeByType = { row: "↔", col: "↕", bomb: "💥" };
+  const badgeByType = { row: "↔", col: "↕", bomb: "💥", colorBomb: "🌈" };
   if (type === "row") {
     cell.classList.add("special-row");
   } else if (type === "col") {
     cell.classList.add("special-col");
   } else if (type === "bomb") {
     cell.classList.add("special-bomb");
+  } else if (type === "colorBomb") {
+    cell.classList.add("special-colorBomb");
   } else {
     return;
   }
@@ -758,19 +791,47 @@ function applyGravityAndRefill(b, sp) {
 
 // swapHint: ユーザーの直接操作で発生した最初のマッチの場合、交換した2マスの位置
 // {a:{r,c}, b:{r,c}} を渡す。縦4つ以上の連でどのマスを特別なコマにするか選ぶ際のヒントに使う
-async function resolveBoard(swapHint, fallMs = FALL_MS) {
+// forcedClearColor: カラー爆弾を交換で発動した場合、消去すべき色番号(または両方カラー爆弾なら"ALL")。
+// 最初の1周目だけ、通常のマッチ判定の代わりにこの色を盤面から全て消去対象にする
+async function resolveBoard(swapHint, fallMs = FALL_MS, forcedClearColor = null) {
   let any = false;
   let firstIteration = true;
   let iterations = 0;
 
   while (true) {
-    const runs = collectRuns(board);
-    if (runs.length === 0) break;
-    any = true;
-    iterations++;
-
+    const isForced = firstIteration && forcedClearColor !== null;
     const upgrades = [];
     const upgradeKeys = new Set();
+    const clearSet = new Set();
+
+    if (isForced) {
+      if (forcedClearColor === "ALL") {
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) clearSet.add(cellKey(r, c));
+        }
+      } else {
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            if (board[r][c] === forcedClearColor) clearSet.add(cellKey(r, c));
+          }
+        }
+        // カラー爆弾自身のマスも必ず消去対象に含める(交換相手の色と一致するとは限らないため)
+        if (swapHint) {
+          if (special[swapHint.a.r][swapHint.a.c] === "colorBomb") {
+            clearSet.add(cellKey(swapHint.a.r, swapHint.a.c));
+          }
+          if (special[swapHint.b.r][swapHint.b.c] === "colorBomb") {
+            clearSet.add(cellKey(swapHint.b.r, swapHint.b.c));
+          }
+        }
+      }
+      if (clearSet.size === 0) {
+        firstIteration = false;
+        continue;
+      }
+    } else {
+    const runs = collectRuns(board);
+    if (runs.length === 0) break;
 
     // 縦の連(3以上)と横の連(3以上)が交差するマス → 爆弾(周囲3x3マスを消せる)に変換する。
     // 最優先で処理し、そのマスは他の特別なコマの変換先候補から除外する
@@ -793,10 +854,36 @@ async function resolveBoard(swapHint, fallMs = FALL_MS) {
       upgrades.push({ r, c, type: "bomb" });
     }
 
-    // 4つ以上の連 → 1マスを特別なコマに変換し、そのマスは消滅対象から除外する
+    // 5つ以上の連 → 1マスを「カラー爆弾」に変換する。隣接マスと交換すると、その色が盤面から全消去される
+    for (const run of runs) {
+      if (run.cells.length >= 5) {
+        const freeCells = run.cells.filter(
+          (cell) => special[cell.r][cell.c] === null && !upgradeKeys.has(cellKey(cell.r, cell.c))
+        );
+        const candidates = freeCells.length > 0 ? freeCells : run.cells;
+        let pick = null;
+        if (firstIteration && swapHint) {
+          pick = candidates.find(
+            (cell) =>
+              (cell.r === swapHint.a.r && cell.c === swapHint.a.c) ||
+              (cell.r === swapHint.b.r && cell.c === swapHint.b.c)
+          );
+        }
+        if (!pick) {
+          pick = candidates[Math.floor((candidates.length - 1) / 2)];
+        }
+        const key = cellKey(pick.r, pick.c);
+        if (!upgradeKeys.has(key)) {
+          upgradeKeys.add(key);
+          upgrades.push({ r: pick.r, c: pick.c, type: "colorBomb" });
+        }
+      }
+    }
+
+    // ちょうど4つの連 → 1マスを特別なコマに変換し、そのマスは消滅対象から除外する(5つ以上はカラー爆弾になる)
     // 縦の連なら「横一列を消せる」('row')、横の連なら「縦一列を消せる」('col')になる
     for (const run of runs) {
-      if (run.cells.length >= 4) {
+      if (run.cells.length === 4) {
         // すでに特別なコマが乗っているマス・爆弾に変換されるマスは変換先として選ばない
         const freeCells = run.cells.filter(
           (cell) => special[cell.r][cell.c] === null && !upgradeKeys.has(cellKey(cell.r, cell.c))
@@ -822,11 +909,14 @@ async function resolveBoard(swapHint, fallMs = FALL_MS) {
     }
 
     // 通常の消滅対象(マッチしたマス全体から、特別なコマへ変換するマスを除く)
-    const clearSet = new Set();
     for (const run of runs) {
       for (const cell of run.cells) clearSet.add(cellKey(cell.r, cell.c));
     }
     for (const key of upgradeKeys) clearSet.delete(key);
+    }
+
+    any = true;
+    iterations++;
 
     // すでに盤面にある特別なコマが消滅対象に含まれていたら、その一列をまとめて消滅対象に広げる(連鎖も対応)
     // triggeredGimmicks には発動した特別なコマの種類と位置を記録し、演出(ギミック)に使う
@@ -864,6 +954,20 @@ async function resolveBoard(swapHint, fallMs = FALL_MS) {
         for (let rr = r - 1; rr <= r + 1; rr++) {
           for (let cc = c - 1; cc <= c + 1; cc++) {
             if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+            const areaKey = cellKey(rr, cc);
+            if (!clearSet.has(areaKey)) {
+              clearSet.add(areaKey);
+              queue.push(areaKey);
+            }
+          }
+        }
+      } else if (type === "colorBomb") {
+        triggered.add(key);
+        triggeredGimmicks.push({ type: "colorBomb", r, c });
+        const chainColor = board[r][c];
+        for (let rr = 0; rr < ROWS; rr++) {
+          for (let cc = 0; cc < COLS; cc++) {
+            if (board[rr][cc] !== chainColor) continue;
             const areaKey = cellKey(rr, cc);
             if (!clearSet.has(areaKey)) {
               clearSet.add(areaKey);
@@ -1000,15 +1104,28 @@ async function animateSwapPreview(a, b) {
 async function performSwap(a, b) {
   busy = true;
   await animateSwapPreview(a, b);
-  const tmpColor = board[a.r][a.c];
-  const tmpSpecial = special[a.r][a.c];
-  board[a.r][a.c] = board[b.r][b.c];
-  special[a.r][a.c] = special[b.r][b.c];
-  board[b.r][b.c] = tmpColor;
-  special[b.r][b.c] = tmpSpecial;
+  const aColor = board[a.r][a.c];
+  const aSpecial = special[a.r][a.c];
+  const bColor = board[b.r][b.c];
+  const bSpecial = special[b.r][b.c];
+  board[a.r][a.c] = bColor;
+  special[a.r][a.c] = bSpecial;
+  board[b.r][b.c] = aColor;
+  special[b.r][b.c] = aSpecial;
   selected = null;
   render();
-  await resolveBoard({ a, b });
+
+  // カラー爆弾を隣のマスと交換した場合、相手の色を盤面から全消去する
+  let forcedClearColor = null;
+  if (aSpecial === "colorBomb" && bSpecial === "colorBomb") {
+    forcedClearColor = "ALL";
+  } else if (aSpecial === "colorBomb") {
+    forcedClearColor = bColor;
+  } else if (bSpecial === "colorBomb") {
+    forcedClearColor = aColor;
+  }
+
+  await resolveBoard({ a, b }, FALL_MS, forcedClearColor);
   movesRemaining--;
   render();
   renderStageUI();
